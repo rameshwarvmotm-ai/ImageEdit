@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>AI Image Edit Pro | NextGen</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            --bg: #020617;
+            --card: rgba(30, 41, 59, 0.7);
+            --accent: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            --accent-solid: #6366f1;
+            --text: #f8fafc;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+            background: radial-gradient(circle at top right, #1e1b4b, #020617);
+            background-attachment: fixed;
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 95%;
+            max-width: 1400px;
+            background: var(--card);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 15px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            background: var(--accent);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+
+        /* Dashboard Layout */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            /* Left: Canvas, Right: Controls */
+            gap: 24px;
+        }
+
+        @media (max-width: 1024px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Left Side: Canvas Area */
+        .canvas-section {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .editor-box {
+            position: relative;
+            background: #000;
+            border-radius: 16px;
+            border: 1px solid #334155;
+            overflow: hidden;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #originalImage {
+            max-width: 100%;
+            display: block;
+            cursor: crosshair;
+        }
+
+        /* Selection Box Animation */
+        .selection-box {
+            position: absolute;
+            border: 2px solid #fff;
+            outline: 2px solid var(--accent-solid);
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.5);
+            background: rgba(99, 102, 241, 0.1);
+            pointer-events: none;
+            display: none;
+        }
+
+        /* Right Side: Controls Section */
+        .control-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            background: rgba(15, 23, 42, 0.5);
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+        }
+
+        .upload-card {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px dashed #475569;
+        }
+
+        .input-tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 12px;
+            background: #020617;
+            padding: 4px;
+            border-radius: 8px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            padding: 8px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            border-radius: 6px;
+        }
+
+        .tab-btn.active {
+            background: #1e293b;
+            color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        textarea {
+            width: 100%;
+            height: 120px;
+            background: #020617;
+            border: 1px solid #334155;
+            color: white;
+            padding: 12px;
+            border-radius: 12px;
+            resize: none;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+
+        .action-btns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        button {
+            padding: 12px;
+            border-radius: 10px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+            grid-column: span 2;
+            font-size: 1rem;
+            margin-top: 10px;
+        }
+
+        .btn-secondary {
+            background: #334155;
+            color: white;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--accent-solid);
+            color: var(--accent-solid);
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            filter: brightness(1.2);
+        }
+
+        button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .status {
+            font-size: 0.85rem;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .success {
+            color: #4ade80;
+        }
+
+        .error {
+            color: #f87171;
+        }
+
+        #resultArea {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .result-img {
+            max-width: 100%;
+            border-radius: 12px;
+            margin-top: 10px;
+            border: 2px solid var(--accent-solid);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <header>
+            <h1>AI Image Edit Pro</h1>
+            <div id="status" class="status">Waiting for image...</div>
+        </header>
+
+        <div class="main-layout">
+            <div class="canvas-section">
+                <div class="editor-box" id="editorBox">
+                    <img id="originalImage"
+                        src="https://dummyimage.com/800x450/1e293b/ffffff.png&text=Upload+Your+Image+Here" />
+                    <div class="selection-box" id="selectionBox"></div>
+                </div>
+
+                <div id="resultArea" style="display:none;">
+                    <h3>✨ Result</h3>
+                    <img id="resultImage" class="result-img" />
+                    <br>
+                    <button class="btn-secondary" id="reEditBtn" style="width: auto; margin-top: 10px;">Edit This
+                        Result</button>
+                    <a id="downloadLink"
+                        style="display:block; margin-top: 10px; color: #a855f7; text-decoration: none; font-weight: bold;"
+                        download="edited.png" href="#">Download Image</a>
+                </div>
+            </div>
+
+            <div class="control-panel">
+                <div class="upload-card">
+                    <div class="input-tabs">
+                        <button class="tab-btn active" onclick="switchTab('file', this)">Local File</button>
+                        <button class="tab-btn" onclick="switchTab('url', this)">Image URL</button>
+                    </div>
+                    <div id="fileInputWrapper">
+                        <input type="file" id="imageInput" accept="image/*" style="font-size: 12px;" />
+                    </div>
+                    <div id="urlInputWrapper" style="display:none;">
+                        <input type="text" id="imageUrl" placeholder="Paste URL..."
+                            style="width:100%; padding: 8px; border-radius: 6px; border:none; background: #000; color:white;" />
+                        <button class="btn-secondary" onclick="loadImageFromUrl()"
+                            style="width:100%; margin-top:5px; padding:6px;">Load URL</button>
+                    </div>
+                </div>
+
+                <div class="prompt-section">
+                    <label style="font-size: 0.8rem; color: #94a3b8;">Modification Instructions</label>
+                    <textarea id="prompt"
+                        placeholder="e.g. Add a tech company logo to the top-left with a neon glow..."></textarea>
+                    <button class="btn-outline" id="enhancePromptBtn"
+                        style="width:100%; margin-top: 8px; font-size: 0.75rem;">✨ AI ENHANCE PROMPT</button>
+                </div>
+
+                <div class="logo-upload">
+                    <label style="font-size: 0.8rem; color: #94a3b8;">Image (Optional)</label>
+                    <input type="file" id="promptImageInput" accept="image/*"
+                        style="font-size: 12px; margin-top:5px;" />
+                </div>
+
+                <div class="action-btns">
+                    <button id="analyze" class="btn-secondary">Analyze Image</button>
+                    <button id="sendBtn" class="btn-primary" disabled>APPLY AI MAGIC</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const webhookUrl = "https://automwork.app.n8n.cloud/webhook/image-edit";
+        const PROMPT_ENHANCER_URL = "https://automwork.app.n8n.cloud/webhook/prompt-enhancer";
+
+        let originalFile = null;
+        let promptImageFile = null;
+        let selection = null;
+        let isDrawing = false;
+        let startX, startY;
+
+        // DOM Elements
+        const elements = {
+            prompt: document.getElementById("prompt"),
+            originalImage: document.getElementById("originalImage"),
+            selectionBox: document.getElementById("selectionBox"),
+            sendBtn: document.getElementById("sendBtn"),
+            statusEl: document.getElementById("status"),
+            resultArea: document.getElementById("resultArea"),
+            resultImage: document.getElementById("resultImage"),
+            analyzeBtn: document.getElementById("analyze"),
+            promptImageInput: document.getElementById("promptImageInput"),
+            enhancePromptBtn: document.getElementById("enhancePromptBtn"),
+            imageInput: document.getElementById("imageInput"),
+            reEditBtn: document.getElementById("reEditBtn")
+        };
+
+        // --- NEW: URL Search Bar Handler ---
+        window.addEventListener("DOMContentLoaded", () => {
+            const params = new URLSearchParams(window.location.search);
+            const imageUrlParam = params.get("imageUrl");
+
+            if (imageUrlParam) {
+                switchTab("url", document.querySelector('.tab-btn:nth-child(2)'));
+                document.getElementById("imageUrl").value = imageUrlParam;
+                loadImageFromDirectUrl(imageUrlParam);
+            }
+        });
+
+        // --- Analyze Image Logic ---
+        elements.analyzeBtn.addEventListener("click", async () => {
+            if (!originalFile) {
+                alert("Please upload an image first!");
+                return;
+            }
+
+            elements.analyzeBtn.disabled = true;
+            updateStatus("Analyzing image content...", "");
+
+            const formData = new FormData();
+            // Sending the file to your primary webhook for analysis
+            formData.append("file0", originalFile);
+
+            try {
+                const res = await fetch(webhookUrl, {
+                    method: "POST",
+                    body: formData
+                });
+
+                const data = await res.json();
+                // n8n usually returns data in an array or a .text property
+                const textData = data[0]?.text || data.text || "";
+
+                if (textData) {
+                    // Use the typewriter effect to put the analysis into the prompt box
+                    await typeEffect(textData.replace(/\r?\n/g, "\n"));
+                    updateStatus("Image analyzed! Suggestions added to prompt.", "success");
+                } else {
+                    updateStatus("Analysis returned no text.", "error");
+                }
+            } catch (err) {
+                console.error(err);
+                updateStatus("Failed to analyze image.", "error");
+            } finally {
+                elements.analyzeBtn.disabled = false;
+            }
+        });
+
+        // Unified URL Loader with CORS Support
+        async function loadImageFromDirectUrl(url) {
+            try {
+                updateStatus("Fetching image from URL...", "");
+
+                // We fetch the image to convert it to a File/Blob locally
+                // This prevents "Tainted Canvas" errors
+                const res = await fetch(url);
+                if (!res.ok) throw new Error("Fetch failed");
+
+                const blob = await res.blob();
+                originalFile = new File([blob], "url-image.png", { type: blob.type });
+
+                // Set crossOrigin to anonymous for canvas compatibility
+                elements.originalImage.crossOrigin = "anonymous";
+                elements.originalImage.src = URL.createObjectURL(blob);
+
+                updateStatus("URL Image Loaded! Draw your selection.", "success");
+            } catch (err) {
+                console.error(err);
+                updateStatus("CORS Error: Link cannot be read by AI.", "error");
+            }
+        }
+
+        async function loadImageFromUrl() {
+            const url = document.getElementById('imageUrl').value;
+            if (url) loadImageFromDirectUrl(url);
+        }
+
+        // --- Initialization ---
+
+        elements.promptImageInput.addEventListener("change", (e) => {
+            promptImageFile = e.target.files[0];
+            updateStatus("Reference image added.", "success");
+        });
+
+        elements.imageInput.addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                originalFile = file;
+                elements.originalImage.src = URL.createObjectURL(file);
+                updateStatus("Image ready. Draw a box on the area to edit.", "success");
+                elements.selectionBox.style.display = "none";
+                selection = null;
+            }
+        });
+
+        function switchTab(type, btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('fileInputWrapper').style.display = type === 'file' ? 'block' : 'none';
+            document.getElementById('urlInputWrapper').style.display = type === 'url' ? 'block' : 'none';
+        }
+
+        // --- Selection Logic ---
+
+        function getMousePos(e) {
+            const rect = elements.originalImage.getBoundingClientRect();
+            return {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+        }
+
+        elements.originalImage.addEventListener("mousedown", e => {
+            if (!originalFile) return;
+            isDrawing = true;
+            const pos = getMousePos(e);
+            startX = pos.x;
+            startY = pos.y;
+
+            elements.selectionBox.style.display = "block";
+            elements.selectionBox.style.left = `${startX}px`;
+            elements.selectionBox.style.top = `${startY}px`;
+            elements.selectionBox.style.width = `0px`;
+            elements.selectionBox.style.height = `0px`;
+        });
+
+        window.addEventListener("mousemove", e => {
+            if (!isDrawing) return;
+            const pos = getMousePos(e);
+
+            const left = Math.min(pos.x, startX);
+            const top = Math.min(pos.y, startY);
+            const width = Math.abs(pos.x - startX);
+            const height = Math.abs(pos.y - startY);
+
+            elements.selectionBox.style.left = `${left}px`;
+            elements.selectionBox.style.top = `${top}px`;
+            elements.selectionBox.style.width = `${width}px`;
+            elements.selectionBox.style.height = `${height}px`;
+        });
+
+        window.addEventListener("mouseup", () => {
+            if (!isDrawing) return;
+            isDrawing = false;
+
+            const box = elements.selectionBox.getBoundingClientRect();
+            const imgRect = elements.originalImage.getBoundingClientRect();
+            const scaleX = elements.originalImage.naturalWidth / imgRect.width;
+            const scaleY = elements.originalImage.naturalHeight / imgRect.height;
+
+            selection = {
+                x: Math.round((box.left - imgRect.left) * scaleX),
+                y: Math.round((box.top - imgRect.top) * scaleY),
+                width: Math.round(box.width * scaleX),
+                height: Math.round(box.height * scaleY)
+            };
+
+            if (selection.width > 5) {
+                elements.sendBtn.disabled = false;
+                updateStatus("Area locked. Click Apply Magic.", "success");
+            }
+        });
+
+        // --- AI Apply Logic ---
+
+        // elements.sendBtn.addEventListener("click", async () => {
+        //     const promptText = elements.prompt.value.trim();
+        //     if (!promptText || !originalFile || !selection) return;
+
+        //     setLoading(true);
+        //     updateStatus("AI is generating...", "");
+
+        //     // Process image with selection box
+        //     const canvas = document.createElement("canvas");
+        //     canvas.width = elements.originalImage.naturalWidth;
+        //     canvas.height = elements.originalImage.naturalHeight;
+        //     const ctx = canvas.getContext("2d");
+
+        //     // Allow canvas to draw cross-origin images
+        //     const tempImg = new Image();
+        //     tempImg.crossOrigin = "anonymous";
+        //     tempImg.src = elements.originalImage.src;
+
+        //     tempImg.onload = () => {
+        //         ctx.drawImage(tempImg, 0, 0);
+        //         ctx.strokeStyle = "#00ff00";
+        //         ctx.lineWidth = Math.max(5, canvas.width / 200);
+        //         ctx.strokeRect(selection.x, selection.y, selection.width, selection.height);
+
+        //         canvas.toBlob(async (blob) => {
+        //             const formData = new FormData();
+        //             formData.append("image", new File([blob], "mask.png"));
+        //             formData.append("prompt", promptText);
+        //             if (promptImageFile) formData.append("logo", promptImageFile);
+
+        //             try {
+        //                 const res = await fetch(webhookUrl, { method: "POST", body: formData });
+        //                 const data = await res.json();
+        //                 const resultUrl = data[0]?.imageUrl || data.imageUrl;
+
+        //                 if (resultUrl) {
+        //                     elements.resultImage.src = resultUrl;
+        //                     document.getElementById("downloadLink").href = resultUrl;
+        //                     elements.resultArea.style.display = "block";
+        //                     elements.resultArea.scrollIntoView({ behavior: "smooth" });
+        //                     updateStatus("Magic complete!", "success");
+        //                 }
+        //             } catch (err) {
+        //                 updateStatus("AI Error: Connection failed.", "error");
+        //             } finally {
+        //                 setLoading(false);
+        //             }
+        //         }, "image/png");
+        //     };
+        // });
+
+        elements.sendBtn.addEventListener("click", async () => {
+            const promptText = elements.prompt.value.trim();
+            if (!promptText || !originalFile || !selection) return;
+
+            setLoading(true);
+            updateStatus("AI is generating...", "");
+
+            const canvas = document.createElement("canvas");
+            canvas.width = elements.originalImage.naturalWidth;
+            canvas.height = elements.originalImage.naturalHeight;
+            const ctx = canvas.getContext("2d");
+
+            const tempImg = new Image();
+            tempImg.crossOrigin = "anonymous";
+            tempImg.src = elements.originalImage.src;
+
+            tempImg.onload = () => {
+                ctx.drawImage(tempImg, 0, 0);
+                ctx.strokeStyle = "#00ff00";
+                ctx.lineWidth = Math.max(5, canvas.width / 200);
+                ctx.strokeRect(selection.x, selection.y, selection.width, selection.height);
+
+                // FIX: We explicitly set the type to 'image/png' here
+                canvas.toBlob(async (blob) => {
+                    const formData = new FormData();
+
+                    // We create a new File object from the blob to ensure the 
+                    // filename and MIME type are correctly set for n8n.
+                    const maskFile = new File([blob], "mask.png", { type: "image/png" });
+
+                    formData.append("image", maskFile);
+                    formData.append("prompt", promptText);
+
+                    if (promptImageFile) {
+                        formData.append("logo", promptImageFile);
+                    }
+
+                    try {
+                        const res = await fetch(webhookUrl, { method: "POST", body: formData });
+                        const data = await res.json();
+
+                        // Handling different n8n response structures
+                        const resultUrl = Array.isArray(data) ? data[0]?.imageUrl : data.imageUrl;
+
+                        if (resultUrl) {
+                            elements.resultImage.src = resultUrl;
+                            document.getElementById("downloadLink").href = resultUrl;
+                            elements.resultArea.style.display = "block";
+                            elements.resultArea.scrollIntoView({ behavior: "smooth" });
+                            updateStatus("Success!", "success");
+                        } else {
+                            throw new Error("No image URL returned");
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        updateStatus("AI Magic failed. Check n8n logs.", "error");
+                    } finally {
+                        setLoading(false);
+                    }
+                }, "image/png"); // Ensure canvas exports as PNG
+            };
+        });
+
+        // --- Re-Edit Result ---
+        elements.reEditBtn.addEventListener("click", async () => {
+            const res = await fetch(elements.resultImage.src);
+            const blob = await res.blob();
+            originalFile = new File([blob], "re-edit.png", { type: blob.type });
+            elements.originalImage.src = URL.createObjectURL(blob);
+            elements.selectionBox.style.display = "none";
+            selection = null;
+            elements.editorBox.scrollIntoView({ behavior: "smooth" });
+            updateStatus("Ready for further edits!", "success");
+        });
+
+        // --- Helpers ---
+
+        function updateStatus(msg, type) {
+            elements.statusEl.textContent = msg;
+            elements.statusEl.className = `status ${type}`;
+        }
+
+        function setLoading(isLoading) {
+            elements.sendBtn.disabled = isLoading;
+            elements.sendBtn.textContent = isLoading ? "Processing..." : "APPLY AI MAGIC";
+        }
+
+        async function typeEffect(text) {
+            elements.prompt.value = "";
+            const words = text.split(" ");
+            for (let i = 0; i < words.length; i++) {
+                elements.prompt.value += words[i] + " ";
+                elements.prompt.scrollTop = elements.prompt.scrollHeight;
+                await new Promise(r => setTimeout(r, 30));
+            }
+        }
+
+        elements.enhancePromptBtn.addEventListener("click", async () => {
+            const val = elements.prompt.value;
+            if (!val) return;
+            elements.enhancePromptBtn.disabled = true;
+            try {
+                const res = await fetch(PROMPT_ENHANCER_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ prompt: val })
+                });
+                const data = await res.json();
+                const enhancedText = data[0]?.enhanced_prompt || data.output || val;
+                await typeEffect(enhancedText);
+            } finally {
+                elements.enhancePromptBtn.disabled = false;
+            }
+        });
+    </script>
+
+    <!-- <script>
+        const webhookUrl = "https://automwork.app.n8n.cloud/webhook/image-edit";
+        const PROMPT_ENHANCER_URL = "https://automwork.app.n8n.cloud/webhook/prompt-enhancer";
+
+        let originalFile = null;
+        let promptImageFile = null;
+        let selection = null;
+        let isDrawing = false;
+        let startX, startY;
+
+        // DOM Elements
+        const elements = {
+            prompt: document.getElementById("prompt"),
+            originalImage: document.getElementById("originalImage"),
+            selectionBox: document.getElementById("selectionBox"),
+            sendBtn: document.getElementById("sendBtn"),
+            statusEl: document.getElementById("status"),
+            resultArea: document.getElementById("resultArea"),
+            resultImage: document.getElementById("resultImage"),
+            analyzeBtn: document.getElementById("analyze"),
+            promptImageInput: document.getElementById("promptImageInput"),
+            enhancePromptBtn: document.getElementById("enhancePromptBtn"),
+            imageInput: document.getElementById("imageInput")
+        };
+
+        // --- Initialization ---
+
+        // Handle Logo Upload
+        elements.promptImageInput.addEventListener("change", (e) => {
+            promptImageFile = e.target.files[0];
+            updateStatus("Logo uploaded!", "success");
+        });
+
+        // Handle Main Image Upload
+        elements.imageInput.addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                originalFile = file;
+                elements.originalImage.src = URL.createObjectURL(file);
+                updateStatus("Image ready. Draw a box on the area to edit.", "success");
+                elements.selectionBox.style.display = "none";
+                selection = null;
+            }
+        });
+
+        // --- Tab Logic ---
+        function switchTab(type, btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('fileInputWrapper').style.display = type === 'file' ? 'block' : 'none';
+            document.getElementById('urlInputWrapper').style.display = type === 'url' ? 'block' : 'none';
+        }
+
+        // --- Image Processing Logic ---
+
+        async function loadImageFromUrl() {
+            const url = document.getElementById('imageUrl').value;
+            if (!url) return alert("Please enter a valid URL");
+
+            try {
+                updateStatus("Fetching image...", "");
+                const res = await fetch(url);
+                const blob = await res.blob();
+                originalFile = new File([blob], "downloaded.png", { type: blob.type });
+                elements.originalImage.src = URL.createObjectURL(blob);
+                updateStatus("URL Image Loaded!", "success");
+            } catch (e) {
+                updateStatus("Failed to load URL image.", "error");
+            }
+        }
+
+        // --- Selection Logic (The "Box" Tool) ---
+
+        function getMousePos(e) {
+            const rect = elements.originalImage.getBoundingClientRect();
+            return {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top,
+                scaleX: elements.originalImage.naturalWidth / rect.width,
+                scaleY: elements.originalImage.naturalHeight / rect.height
+            };
+        }
+
+        elements.originalImage.addEventListener("mousedown", e => {
+            isDrawing = true;
+            const pos = getMousePos(e);
+            startX = pos.x;
+            startY = pos.y;
+
+            elements.selectionBox.style.display = "block";
+            elements.selectionBox.style.left = `${startX}px`;
+            elements.selectionBox.style.top = `${startY}px`;
+            elements.selectionBox.style.width = `0px`;
+            elements.selectionBox.style.height = `0px`;
+        });
+
+        window.addEventListener("mousemove", e => {
+            if (!isDrawing) return;
+            const pos = getMousePos(e);
+
+            const left = Math.min(pos.x, startX);
+            const top = Math.min(pos.y, startY);
+            const width = Math.abs(pos.x - startX);
+            const height = Math.abs(pos.y - startY);
+
+            elements.selectionBox.style.left = `${left}px`;
+            elements.selectionBox.style.top = `${top}px`;
+            elements.selectionBox.style.width = `${width}px`;
+            elements.selectionBox.style.height = `${height}px`;
+        });
+
+        window.addEventListener("mouseup", () => {
+            if (!isDrawing) return;
+            isDrawing = false;
+
+            const box = elements.selectionBox.getBoundingClientRect();
+            const img = elements.originalImage.getBoundingClientRect();
+            const scaleX = elements.originalImage.naturalWidth / img.width;
+            const scaleY = elements.originalImage.naturalHeight / img.height;
+
+            selection = {
+                x: Math.round((box.left - img.left) * scaleX),
+                y: Math.round((box.top - img.top) * scaleY),
+                width: Math.round(box.width * scaleX),
+                height: Math.round(box.height * scaleY)
+            };
+
+            if (selection.width > 5) {
+                elements.sendBtn.disabled = false;
+                updateStatus("Region selected. Click 'Apply AI Magic'", "success");
+            }
+        });
+
+        // --- AI Integration Logic ---
+
+        elements.sendBtn.addEventListener("click", async () => {
+            const promptText = elements.prompt.value.trim();
+            if (!promptText || !originalFile || !selection) return;
+
+            setLoading(true);
+            updateStatus("AI is generating your image...", "");
+
+            const canvas = document.createElement("canvas");
+            canvas.width = elements.originalImage.naturalWidth;
+            canvas.height = elements.originalImage.naturalHeight;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(elements.originalImage, 0, 0);
+
+            // Draw visual guide for the AI
+            ctx.strokeStyle = "#00ff00";
+            ctx.lineWidth = Math.max(5, canvas.width / 200);
+            ctx.strokeRect(selection.x, selection.y, selection.width, selection.height);
+
+            canvas.toBlob(async (blob) => {
+                const formData = new FormData();
+                formData.append("image", new File([blob], "mask.png"));
+                formData.append("prompt", promptText);
+                if (promptImageFile) formData.append("logo", promptImageFile);
+
+                try {
+                    const res = await fetch(webhookUrl, { method: "POST", body: formData });
+                    const data = await res.json();
+                    const resultUrl = data[0]?.imageUrl || data.imageUrl;
+
+                    if (resultUrl) {
+                        elements.resultImage.src = resultUrl;
+                        document.getElementById("downloadLink").href = resultUrl;
+                        elements.resultArea.style.display = "block";
+                        elements.resultArea.scrollIntoView({ behavior: "smooth" });
+                        updateStatus("Magic complete!", "success");
+                    }
+                } catch (err) {
+                    updateStatus("AI Error: Check console", "error");
+                } finally {
+                    setLoading(false);
+                }
+            }, "image/png");
+        });
+
+        // --- Helper Functions ---
+
+        function updateStatus(msg, type) {
+            elements.statusEl.textContent = msg;
+            elements.statusEl.className = `status ${type}`;
+        }
+
+        function setLoading(isLoading) {
+            elements.sendBtn.disabled = isLoading;
+            elements.sendBtn.textContent = isLoading ? "Processing..." : "APPLY AI MAGIC";
+        }
+
+        // Typewriter effect for AI Prompt Enhancement
+        async function typeEffect(text) {
+            elements.prompt.value = "";
+            const words = text.split(" ");
+            for (let i = 0; i < words.length; i++) {
+                elements.prompt.value += words[i] + " ";
+                elements.prompt.scrollTop = elements.prompt.scrollHeight;
+                await new Promise(r => setTimeout(r, 40));
+            }
+        }
+
+        elements.enhancePromptBtn.addEventListener("click", async () => {
+            const val = elements.prompt.value;
+            if (!val) return;
+
+            elements.enhancePromptBtn.disabled = true;
+            updateStatus("Enhancing with AI...", "");
+
+            try {
+                const res = await fetch(PROMPT_ENHANCER_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ prompt: val })
+                });
+                const data = await res.json();
+                const enhancedText = data[0]?.enhanced_prompt || data.output || val;
+                await typeEffect(enhancedText);
+                updateStatus("Prompt polished!", "success");
+            } finally {
+                elements.enhancePromptBtn.disabled = false;
+            }
+        });
+    </script> -->
+
+</body>
+
+</html>
